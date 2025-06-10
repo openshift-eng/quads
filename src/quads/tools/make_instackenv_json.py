@@ -7,7 +7,6 @@ import os
 import time
 import pathlib
 from collections import defaultdict
-from distutils.util import strtobool
 from datetime import datetime
 from shutil import copyfile
 
@@ -16,6 +15,13 @@ from quads.tools.external.foreman import Foreman
 from quads.config import Config
 
 quads = QuadsApi(Config)
+
+
+def strtobool(value: str) -> bool:
+    value = value.lower()
+    if value in ("y", "yes", "on", "1", "true", "t"):
+        return True
+    return False
 
 
 async def make_env_json(filename):
@@ -33,7 +39,10 @@ async def make_env_json(filename):
     now = time.time()
     old_jsons = [file for file in os.listdir(Config["json_web_path"]) if ":" in file]
     for file in old_jsons:
-        if os.stat(os.path.join(Config["json_web_path"], file)).st_mtime < now - Config["json_retention_days"] * 86400:
+        if (
+            os.stat(os.path.join(Config["json_web_path"], file)).st_mtime
+            < now - Config["json_retention_days"] * 86400
+        ):
             os.remove(os.path.join(Config["json_web_path"], file))
 
     for cloud in cloud_list:
@@ -69,7 +78,10 @@ async def make_env_json(filename):
                         if interface.pxe_boot:
                             mac.append(interface.mac_address)
                 if filename == "ocpinventory":
-                    mac = [interface.mac_address for interface in sorted(host.interfaces, key=lambda k: k.name)]
+                    mac = [
+                        interface.mac_address
+                        for interface in sorted(host.interfaces, key=lambda k: k.name)
+                    ]
                 data["nodes"].append(
                     {
                         "name": host.name,
@@ -95,7 +107,9 @@ async def make_env_json(filename):
             Config["json_web_path"],
             "%s_%s.json_%s" % (cloud.name, filename, now.strftime("%Y-%m-%d_%H:%M:%S")),
         )
-        json_file = os.path.join(Config["json_web_path"], "%s_%s.json" % (cloud.name, filename))
+        json_file = os.path.join(
+            Config["json_web_path"], "%s_%s.json" % (cloud.name, filename)
+        )
         with open(new_json_file, "w+") as _json_file:
             _json_file.seek(0)
             _json_file.write(content)
